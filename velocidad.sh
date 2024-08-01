@@ -1,49 +1,65 @@
 #!/bin/bash
+
+# Arte ASCII de una antena parabólica
 echo "
-                                                           ############
-                                                           ################
-                                                                       ######
-                                                          #########       ####
-                                                         #############     ####
-                       ####                                       ######    ####
-                      #######                                        ####    ###
-                      ########                              ##        ####   ####
-                     ####  #####                          ########     ###    ###
-                    ####     #####                             ####    ####   ###
-                    ####       #####                  #######   ###     ###  ####
-                    ###          #####               #########  ###    ####  ###
-                   ####            #####             ###   ###         ###
-                   ###              ######           #########
-                   ###                #####        #########
-                   ###                  #####    #####
-                   ####                   ##########
-                    ###                     #######
-                    ###                       ####
-                    ####                       #####
-                     ###                         #####
-                      ###                          #####
-                      ####                           #####
-                       ####                            #####
-                        #####                           ######
-                          ####                            #####
-                           #####                            #####
-                             #####                            #####
-                               ######                           #####
-                              ##########                         #####
-                              ####  #########              #########
-                            ####        #########################
-                            ####            ##############
-                           ####              ###
-                          ####                ###
-                         ####                 ####
-                        ####                   ####
-                       ####                     ####
-                      ####                       ####
-                     ####                         ####
-                    ##################################
-                     ################################
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                           ############                             
+                                                           ################                         
+                                                                       ######                       
+                                                          #########       ####                      
+                                                         #############     ####                     
+                       ####                                       ######    ####                    
+                      #######                                        ####    ###                    
+                      ########                              ##        ####   ####                   
+                     ####  #####                          ########     ###    ###                   
+                    ####     #####                             ####    ####   ###                   
+                    ####       #####                  #######   ###     ###  ####                   
+                    ###          #####               #########  ###    ####  ###                    
+                   ####            #####             ###   ###         ###                          
+                   ###              ######           #########                                      
+                   ###                #####        #########                                        
+                   ###                  #####    #####                                              
+                   ####                   ##########                                                
+                    ###                     #######                                                 
+                    ###                       ####                                                  
+                    ####                       #####                                                
+                     ###                         #####                                              
+                      ###                          #####                                            
+                      ####                           #####                                          
+                       ####                            #####                                        
+                        #####                           ######                                      
+                          ####                            #####                                     
+                           #####                            #####                                   
+                             #####                            #####                                 
+                               ######                           #####                               
+                              ##########                         #####                              
+                              ####  #########              ##########                               
+                            ####        #########################                                   
+                            ####            ##############                                          
+                           ####              ###                                                    
+                          ####                ###                                                   
+                         ####                 ####                                                  
+                        ####                   ####                                                 
+                       ####                     ####                                                
+                      ####                       ####                                               
+                     ####                         ####                                              
+                    ##################################                                              
+                     ################################                                               
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
 
 "
+
 # Función para mostrar una barra de progreso con calaveras grandes y porcentaje
 show_progress() {
     local duration=$1
@@ -68,34 +84,112 @@ show_progress() {
 }
 
 # Iniciar la barra de progreso en segundo plano
-show_progress 50 &  # Duración estimada de 50 segundos
+show_progress 30 &  # Duración estimada de 30 segundos
 PROGRESS_PID=$!
 
-# Medir la velocidad de Internet
-echo "Realizando la medición........"
-result=$(speedtest-cli --json)
+# Crear y activar el entorno virtual
+VENV_DIR="/home/dani/entorno_vir"
+if [ ! -d "$VENV_DIR" ]; then
+    echo "El entorno virtual no existe. Creándolo..."
+    python3 -m venv "$VENV_DIR"
+fi
+
+source "$VENV_DIR/bin/activate"
+
+# Verificar e instalar las bibliotecas necesarias
+pip install --upgrade pip
+pip install --upgrade speedtest requests
+
+# Crear el script de Python para medir la velocidad de Internet
+cat << 'EOF' > /tmp/speedtest_script.py
+import speedtest
+import requests
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+def test_speedtest():
+    st = speedtest.Speedtest()
+    st.download()
+    st.upload()
+    results = st.results.dict()
+    return {
+        'download': results["download"] / 1_000_000,  # Convertir a Mbps
+        'upload': results["upload"] / 1_000_000,      # Convertir a Mbps
+        'ping': results["ping"],
+        'server': results["server"]["name"],
+        'location': results["server"]["location"]
+    }
+
+def test_requests():
+    # Implementa una prueba de velocidad utilizando la biblioteca requests
+    # Aquí solo se muestra un ejemplo simplificado
+    download_speed = requests.get('https://speed.hetzner.de/100MB.bin').elapsed.total_seconds()
+    upload_speed = download_speed * 1.2  # Solo como ejemplo, debes implementar la lógica real
+    ping = requests.get('https://www.google.com').elapsed.total_seconds() * 1000
+    return {
+        'download': download_speed,
+        'upload': upload_speed,
+        'ping': ping,
+        'server': 'Hetzner Online GmbH',
+        'location': 'Germany'
+    }
+
+# Realizar las pruebas de velocidad
+results_speedtest = test_speedtest()
+results_requests = test_requests()
+
+# Crear el mensaje de correo electrónico
+sender = "tu_correo@example.com"
+receiver = "zata_k@hotmail.com"
+subject = "Resultados de la prueba de velocidad de Internet"
+body = f"""
+Resultados de la prueba de velocidad de Internet utilizando speedtest:
+-----------------------------------------------
+Latencia (Ping): {results_speedtest['ping']} ms
+Velocidad de descarga: {results_speedtest['download']:.2f} Mbps
+Velocidad de subida: {results_speedtest['upload']:.2f} Mbps
+Servidor: {results_speedtest['server']}
+Ubicación del servidor: {results_speedtest['location']}
+
+Resultados de la prueba de velocidad de Internet utilizando requests:
+-----------------------------------------------
+Latencia (Ping): {results_requests['ping']} ms
+Velocidad de descarga: {results_requests['download']:.2f} Mbps
+Velocidad de subida: {results_requests['upload']:.2f} Mbps
+Servidor: {results_requests['server']}
+Ubicación del servidor: {results_requests['location']}
+-----------------------------------------------
+"""
+
+msg = MIMEMultipart()
+msg['From'] = sender
+msg['To'] = receiver
+msg['Subject'] = subject
+msg.attach(MIMEText(body, 'plain'))
+
+# Enviar el correo electrónico
+try:
+    with smtplib.SMTP('smtp.example.com', 587) as server:
+        server.starttls()
+        server.login(sender, 'tu_contraseña')
+        server.sendmail(sender, receiver, msg.as_string())
+except Exception as e:
+    print(f"Error al enviar el correo electrónico: {e}")
+
+# Imprimir los resultados en la consola
+print(body)
+
+# Firma
+print("\033[1;31m- Creado por: DANIEL GIL MARTINEZ \033[0m")
+EOF
+
+# Ejecutar el script de Python
+python /tmp/speedtest_script.py
 
 # Detener la barra de progreso
 kill $PROGRESS_PID
 wait $PROGRESS_PID 2>/dev/null
 
-# Guardar los resultados en variables usando jq para parsear el JSON
-DOWNLOAD_SPEED=$(echo $result | jq '.download' | awk '{print $1/1000000}')
-UPLOAD_SPEED=$(echo $result | jq '.upload' | awk '{print $1/1000000}')
-PING=$(echo $result | jq '.ping')
-SERVER_NAME=$(echo $result | jq -r '.server.name')
-SERVER_LOCATION=$(echo $result | jq -r '.server.location')
-SERVER_COUNTRY=$(echo $result | jq -r '.server.country')
-
-# Mostrar los resultados de forma vistosa
-echo -e "\n\033[1;34m-----------------------------------------------\033[0m"
-echo -e "\n\033[1;34mResultados de la prueba de velocidad de Internet:\033[0m"
-echo -e "\033[1;34mLatencia (Ping):\033[0m  \033[1;32m$PING ms\033[0m"
-echo -e "\033[1;34mVelocidad de descarga:\033[0m  \033[1;32m$DOWNLOAD_SPEED Mbps\033[0m"
-echo -e "\033[1;34mVelocidad de subida:\033[0m  \033[1;32m$UPLOAD_SPEED Mbps\033[0m"
-echo -e "\033[1;34mServidor:\033[0m  \033[1;32m$SERVER_NAME\033[0m"
-echo -e "\033[1;34mUbicación del servidor:\033[0m  \033[1;32m$SERVER_LOCATION, $SERVER_COUNTRY\033[0m"
-echo -e "\n\033[1;34m-----------------------------------------------\033[0m"
-echo -e "\n\033[1;31m------------------------------------------------\033[1;31m-"
-# Línea del autor
-echo -e "\033[1;31m- Autor: DANIEL GIL MARTINEZ \033[0m"
+# Desactivar el entorno virtual
+deactivate
